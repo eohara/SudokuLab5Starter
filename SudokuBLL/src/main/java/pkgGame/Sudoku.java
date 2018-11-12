@@ -1,5 +1,7 @@
 package pkgGame;
 
+
+
 import java.io.Serializable;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -7,9 +9,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 
+import org.hibernate.jpa.criteria.expression.function.LengthFunction;
+import pkgEnum.eGameDifficulty;
 import pkgEnum.ePuzzleViolation;
 import pkgHelper.LatinSquare;
 import pkgHelper.PuzzleViolation;
@@ -44,8 +49,84 @@ public class Sudoku extends LatinSquare implements Serializable {
 	 */
 
 	private int iSqrtSize;
+	
+	private eGameDifficulty eGD;
+	
+	
+	private Sudoku() {
+		this.eGD = eGameDifficulty.EASY;
+	}
+	
+	
+	public Sudoku(eGameDifficulty eGD, int iSize) throws Exception {
+		this(iSize);
+		this.eGD = eGD;	
+		FillDiagonalRegions();
+		SetCells();		
+		fillRemaining(this.cells.get(Objects.hash(0, 0)));
+		RemoveCells();
+	}
 
+	private boolean isDifficultyMet(int iValue)
+	{
+		if (iValue < 100)
+			return false;
+		if (this.eGD.getiDifficultyValue() == 100 && iValue >= 100 && iValue < 500)
+			return true;
+		if (this.eGD.getiDifficultyValue() == 500 && iValue >= 500 && iValue <1000)
+			return true;
+		if (this.eGD.getiDifficultyValue() == 1000 && iValue >= 1000)
+			return true;
+		return false;
+	}
+	
+	
+	private void RemoveCells() {
+		int numberOfRemovals = 0;
+		do{
+			numberOfRemovals += 1;
+			Random rand = new SecureRandom();
+			int randomRow = rand.nextInt(this.iSize);
+			int randomCol = rand.nextInt(this.iSize);
+			
+			this.getPuzzle()[randomRow][randomCol] = 0;
+			
+			
+			
+		} while (isDifficultyMet(PossibleValuesMultiplier(cells)) == false);
+		System.out.println("Removed: "+numberOfRemovals);
+		System.out.println("Multiplier: " + PossibleValuesMultiplier(cells));
+	}
+	
 	private HashMap<Integer, SudokuCell> cells = new HashMap<Integer, SudokuCell>();
+	
+	
+	private void SetRemainingCells() {
+		for (int iRow = 0; iRow < iSize; iRow++) {
+			for (int iCol = 0; iCol < iSize; iCol++) {
+				SudokuCell c = new SudokuCell(iRow, iCol);
+				c.setlstRemainingValidValues(getAllValidCellValues(iCol, iRow));
+				c.ShuffleValidValues();
+				cells.put(c.hashCode(), c); 
+			}
+		}
+	}
+	
+	private int PossibleValuesMultiplier(HashMap<Integer, SudokuCell> c1) {
+		int multiplier = 1; 
+		int sizeVal;
+		ArrayList<Integer> possibleValues;
+		SetRemainingCells();
+		for (Map.Entry<Integer, SudokuCell> c : c1.entrySet()) {
+			SudokuCell cell = c.getValue();
+		    possibleValues = cell.getLstRemainingValidValues();
+		    sizeVal = possibleValues.size();
+		    if (sizeVal ==0)
+		    	continue;
+		    multiplier*=sizeVal;
+		}
+		return multiplier;
+	}
 	
 	/**
 	 * Sudoku - for Lab #2... do the following:
@@ -573,6 +654,7 @@ public class Sudoku extends LatinSquare implements Serializable {
 	}
 	
 		
+	
 	/**
 	 * Cell - private class that handles possible remaining values
 	 * 
@@ -586,10 +668,20 @@ public class Sudoku extends LatinSquare implements Serializable {
 		private int iRow;
 		private int iCol;
 		private ArrayList<Integer> lstValidValues = new ArrayList<Integer>();
+		private ArrayList<Integer> lstRemainingValidValues = new ArrayList<Integer>();
 
 		public SudokuCell(int iRow, int iCol) {
 			super(iRow, iCol);
 		}
+
+		public void setlstRemainingValidValues(HashSet<Integer> allValidCellValues) {
+			lstRemainingValidValues = new ArrayList<Integer>(allValidCellValues);
+			
+		}
+		
+		public ArrayList<Integer> getLstRemainingValidValues() {
+			return lstRemainingValidValues;
+		} 
 
 		@Override
 		public boolean equals(Object o) {
