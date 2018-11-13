@@ -39,8 +39,8 @@ public class SudokuTest {
 
 	}
 	
-	@Test(timeout = 30000)
-	public void isDiffMetTest() throws Exception
+	@Test (timeout = 30000)
+	public void isDiffMetTest1() throws Exception
 	{
 		
 		System.out.println("Easy");
@@ -54,11 +54,8 @@ public class SudokuTest {
 		System.out.println("Hard");
 		Sudoku s3 = new Sudoku(eGameDifficulty.HARD,9);
 		s3.PrintPuzzle();
-
-		
-		
-	}
 	
+	}
 	
 /*
 	@Test(expected = Exception.class)
